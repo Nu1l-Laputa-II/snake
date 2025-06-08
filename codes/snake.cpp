@@ -29,7 +29,7 @@ struct Position {
 class Snake {
 private:
     int length;
-    queue<Position> body; // position of snake's body, snake's head in rear of queue, snake's rear in front of queue
+    deque<Position> body; // position of snake's body, snake's head in rear of queue, snake's rear in front of queue
     int direction; // 0: up, 1: right, 2: down, 3: left
 
 public:
