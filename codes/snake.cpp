@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <string>
-#include <queue>
+#include <deque>
 
 using namespace std;
 
@@ -43,6 +43,11 @@ const Position Right = {1, 0};
 const Position Down = {0, 1};
 const Position Left = {-1, 0};
 
+const char snakeSign = 'x';
+const char foodSign = 'o';
+const char emptySign = ' ';
+const char wallSign = '#';
+
 class Snake {
 private:
     int length;
@@ -56,7 +61,7 @@ public:
         Position startPos = {(MAP_SIZE - 1) / 2, (MAP_SIZE - 1 ) / 2};
         body.push_back(startPos);
     }
-    
+
     bool inBody(const Position& pos) const
     {
         for (const auto& segment : body)
@@ -123,6 +128,29 @@ public:
         } while (snake.inBody(position));
     }
 };
+
+void display(const Snake& snake, const Food& food)
+{
+    system("clear || cls"); // 清屏
+
+    // 逐行输出
+    for (int y = 0; y < MAP_SIZE; ++y) {
+        for (int x = 0; x < MAP_SIZE; ++x) {
+            Position pos = {x, y};
+            if (snake.inBody(pos)) {
+                cout << snakeSign; // 蛇身
+            } else if (pos == food.getPosition()) {
+                cout << foodSign; // 食物
+            } else if (x == 0 || x == MAP_SIZE - 1 || y == 0 || y == MAP_SIZE - 1) {
+                cout << wallSign; // 墙壁
+            } else  
+            {
+                cout << emptySign; // 空白
+            }
+        }
+        cout << endl;
+    }
+}
 
 int main()
 {

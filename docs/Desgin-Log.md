@@ -154,3 +154,36 @@ void generateFood(const Snake& snake)
 }
 ```
 
+## Step3 显示模块
+
+```
+打印地图，打印蛇（x)，打印食物(o)，墙壁(#)。
+```
+
+### 实现
+
+```cpp
+void display(const Snake& snake, const Food& food)
+{
+    system("clear || cls"); // 清屏
+
+    // 逐行输出
+    for (int y = 0; y < MAP_SIZE; ++y) {
+        for (int x = 0; x < MAP_SIZE; ++x) {
+            Position pos = {x, y};
+            if (snake.inBody(pos)) {
+                cout << snakeSign; // 蛇身
+            } else if (pos == food.getPosition()) {
+                cout << foodSign; // 食物
+            } else if (x == 0 || x == MAP_SIZE - 1 || y == 0 || y == MAP_SIZE - 1) {
+                cout << wallSign; // 墙壁
+            } else  
+            {
+                cout << emptySign; // 空白
+            }
+        }
+        cout << endl;
+    }
+}
+```
+
