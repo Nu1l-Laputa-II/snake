@@ -187,3 +187,68 @@ void display(const Snake& snake, const Food& food)
 }
 ```
 
+## Step4 实现初步游戏
+
+```
+首先创建蛇，食物实体，进入{等待输入，更新游戏，输出}循环
+```
+
+### 实现
+
+```cpp
+Snake snake;
+Food food(snake);
+        
+while(true)
+{
+    // 等待输入
+    char input;
+    cin >> input;
+    switch(input) {
+        case 'w': snake.setDirection(Up); break;
+        case 's': snake.setDirection(Down); break;
+        case 'a': snake.setDirection(Left); break;
+        case 'd': snake.setDirection(Right); break;
+        case 'q': goto gameEnd;  // 退出游戏
+    }
+
+    // 更新游戏
+    if (snake.collision())
+    {
+        cout << "Game Over! You collided with the wall or yourself.\n";
+        break; // 结束游戏
+    }
+    else
+    {
+        snake.update(food); // 更新蛇的位置
+    }
+
+    // 输出游戏画面
+    display(snake, food);
+    cout << "Snake Length: " << snake.getLength() << endl;
+}
+gameEnd:;  // 添加游戏结束标签
+```
+
+## 中途测试
+
+- 整体逻辑实现完全
+- collision有BUG，碰撞墙有问题（尤其右边）
+- 食物会生成在墙上
+- 每次进入游戏食物生成的位置一样
+
+## 暂停NEXT
+
+- [ ] 修复以上BUG
+
+- [ ] 将交互改成异步的多线程的，而非while一套
+
+- [ ] 美化显示，要求正方形
+
+- [ ] 对比AI生成SNAKE的代码
+
+- [ ] 开始重构代码
+
+- [ ] 录制项目视频
+
+  

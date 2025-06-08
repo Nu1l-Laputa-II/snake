@@ -48,6 +48,26 @@ const char foodSign = 'o';
 const char emptySign = ' ';
 const char wallSign = '#';
 
+class Snake;  // 前向声明
+
+class Food {
+private:
+    Position position;
+
+public:
+    Food() : position{MAP_SIZE/2, MAP_SIZE/2} {}  // 添加默认构造函数，食物初始位置在地图中心
+    
+    Food(const Snake& snake) {      
+        generateFood(snake); // 生成初始食物位置
+    }
+
+    Position getPosition() const {
+        return position;
+    }
+
+    void generateFood(const Snake& snake);  // 声明但不定义
+};
+
 class Snake {
 private:
     int length;
@@ -60,6 +80,10 @@ public:
         // 初始化蛇身，初始位置在地图中心
         Position startPos = {(MAP_SIZE - 1) / 2, (MAP_SIZE - 1 ) / 2};
         body.push_back(startPos);
+    }
+
+    int getLength() const {
+        return length;
     }
 
     bool inBody(const Position& pos) const
@@ -99,35 +123,24 @@ public:
         if (nextHead == food.getPosition()) {
             length++; // 吃到食物，蛇变长
             body.push_back(nextHead);
+            food.generateFood(*this); // 生成新的食物
         } else {
             body.push_back(nextHead);
             body.pop_front(); // 去掉尾部
         }
     }
-};
 
-class Food {
-private:
-    Position position;
-
-public:
-    Food() {
-        generateFood(Snake()); // 初始生成食物
-    }
-
-    Position getPosition() const {
-        return position;
-    }
-
-    void generateFood(const Snake& snake)
-    {
-        // 随机生成食物位置，确保不与蛇身重叠
-        do {
-            position.x = rand() % MAP_SIZE;
-            position.y = rand() % MAP_SIZE;
-        } while (snake.inBody(position));
+    void setDirection(Position newDir) {
+        direction = newDir;
     }
 };
+
+void Food::generateFood(const Snake& snake) {
+    do {
+        position.x = rand() % MAP_SIZE;
+        position.y = rand() % MAP_SIZE;
+    } while (snake.inBody(position));
+}
 
 void display(const Snake& snake, const Food& food)
 {
@@ -170,8 +183,38 @@ int main()
 
     if (choice == 0)
     {
-        cout << "Starting the game...\n";
-        // TODO: loop of game
+        Snake snake;
+        Food food(snake);
+        
+        while(true)
+        {
+            // 等待输入
+            char input;
+            cin >> input;
+            switch(input) {
+                case 'w': snake.setDirection(Up); break;
+                case 's': snake.setDirection(Down); break;
+                case 'a': snake.setDirection(Left); break;
+                case 'd': snake.setDirection(Right); break;
+                case 'q': goto gameEnd;  // 退出游戏
+            }
+
+            // 更新游戏
+            if (snake.collision())
+            {
+                cout << "Game Over! You collided with the wall or yourself.\n";
+                break; // 结束游戏
+            }
+            else
+            {
+                snake.update(food); // 更新蛇的位置
+            }
+
+            // 输出游戏画面
+            display(snake, food);
+            cout << "Snake Length: " << snake.getLength() << endl;
+        }
+        gameEnd:;  // 添加游戏结束标签
     }
     else if (choice == 1)
     {
