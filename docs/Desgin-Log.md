@@ -88,3 +88,69 @@ public:
 };
 ```
 
+## step2 设计蛇的算法，食物生成的算法
+
+### TODO
+
+- [x] 蛇
+  - [x] 碰撞
+    - [x] 边界检测
+    - [x] 身体检测
+  - [x] 更新蛇体
+- [x] 食物
+  - [x] 生成位置
+
+### 实现
+
+- 蛇-碰撞
+
+```cpp
+bool collision()
+{
+    Position head = body.back();
+    Position nextHead = head + direction;
+    // 边界碰撞
+    if (nextHead.x < 0 || nextHead.x >= MAP_SIZE || nextHead.y < 0 || nextHead.y >= MAP_SIZE)
+    {
+        return true; // 撞墙
+    }
+    // 自身碰撞
+    if (inBody(nextHead))
+    {
+        return true; // 撞到自己
+    }
+    return false;
+}
+```
+
+- 蛇-更新
+
+```cpp
+void update(Food& food)
+{
+    Position head = body.back();
+    Position nextHead = head + direction;
+
+    if (nextHead == food.getPosition()) {
+        length++; // 吃到食物，蛇变长
+        body.push_back(nextHead);
+    } else {
+        body.push_back(nextHead);
+        body.pop_front(); // 去掉尾部
+	}
+}
+```
+
+- 食物-生成位置
+
+```cpp
+void generateFood(const Snake& snake)
+{
+    // 随机生成食物位置，确保不与蛇身重叠
+    do {
+        position.x = rand() % MAP_SIZE;
+        position.y = rand() % MAP_SIZE;
+    } while (snake.inBody(position));
+}
+```
+
