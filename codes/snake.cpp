@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <string>
 #include <deque>
+#include <ctime>
 
 using namespace std;
 
@@ -36,6 +37,10 @@ inline Position operator+(const Position& a, const Position& b) {
 
 inline bool operator==(const Position& a, const Position& b) {
     return a.x == b.x && a.y == b.y;
+}
+
+inline bool operator!=(const Position& a, const Position& b) {
+    return !(a == b);
 }
 
 const Position Up = {0, -1};
@@ -86,6 +91,10 @@ public:
         return length;
     }
 
+    Position getDirection() const {
+        return direction;
+    }
+
     bool inBody(const Position& pos) const
     {
         for (const auto& segment : body)
@@ -103,7 +112,7 @@ public:
         Position head = body.back();
         Position nextHead = head + direction;
         // 边界碰撞
-        if (nextHead.x < 0 || nextHead.x >= MAP_SIZE || nextHead.y < 0 || nextHead.y >= MAP_SIZE)
+        if (nextHead.x <= 0 || nextHead.x >= MAP_SIZE - 1 || nextHead.y <= 0 || nextHead.y >= MAP_SIZE - 1)
         {
             return true; // 撞墙
         }
@@ -137,8 +146,8 @@ public:
 
 void Food::generateFood(const Snake& snake) {
     do {
-        position.x = rand() % MAP_SIZE;
-        position.y = rand() % MAP_SIZE;
+        position.x = rand() % (MAP_SIZE - 2) + 1;   // 确保食物不在边界上
+        position.y = rand() % (MAP_SIZE - 2) + 1;
     } while (snake.inBody(position));
 }
 
@@ -167,6 +176,9 @@ void display(const Snake& snake, const Food& food)
 
 int main()
 {
+    // 设置随机数种子
+    srand(time(nullptr));
+    
     // clear the console screen
     system("clear || cls");
 
@@ -185,6 +197,7 @@ int main()
     {
         Snake snake;
         Food food(snake);
+        Position nextDirection;
         
         while(true)
         {
@@ -192,11 +205,15 @@ int main()
             char input;
             cin >> input;
             switch(input) {
-                case 'w': snake.setDirection(Up); break;
-                case 's': snake.setDirection(Down); break;
-                case 'a': snake.setDirection(Left); break;
-                case 'd': snake.setDirection(Right); break;
+                case 'w': nextDirection = Up; break;
+                case 's': nextDirection = Down; break;
+                case 'a': nextDirection = Left; break;
+                case 'd': nextDirection = Right; break;
                 case 'q': goto gameEnd;  // 退出游戏
+            }
+            if(nextDirection != snake.getDirection()) // 确保方向改变
+            {
+                snake.setDirection(nextDirection); // 设置新的方向
             }
 
             // 更新游戏
