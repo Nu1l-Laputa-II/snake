@@ -9,13 +9,14 @@
 - 清屏操作
 
 ```cpp
+// 程序启动，首先清屏然后输出游戏开始的界面，选择0开始，1退出。
 std::system("clear || cls");
 ```
 
 - 设置console为绿色
 
 ```cpp
-std::cout << "\033[32m"
+std::cout << "\033[32m";
 ```
 
 - 欢迎界面设定
@@ -56,6 +57,7 @@ Please choose an option:)";
 - 位置
 
 ```cpp
+// 蛇的结构体要素为蛇每个身体的位置（采用deque实现，蛇头在队尾，蛇尾在队头），蛇头的动向。
 struct Position {
     int x;
     int y;
@@ -137,7 +139,7 @@ void update(Food& food)
     } else {
         body.push_back(nextHead);
         body.pop_front(); // 去掉尾部
-	}
+    }
 }
 ```
 
@@ -163,6 +165,7 @@ void generateFood(const Snake& snake)
 ### 实现
 
 ```cpp
+// 打印地图，打印蛇（x)，打印食物(o)，墙壁(#)。
 void display(const Snake& snake, const Food& food)
 {
     system("clear || cls"); // 清屏
@@ -177,8 +180,7 @@ void display(const Snake& snake, const Food& food)
                 cout << foodSign; // 食物
             } else if (x == 0 || x == MAP_SIZE - 1 || y == 0 || y == MAP_SIZE - 1) {
                 cout << wallSign; // 墙壁
-            } else  
-            {
+            } else {
                 cout << emptySign; // 空白
             }
         }
@@ -196,9 +198,10 @@ void display(const Snake& snake, const Food& food)
 ### 实现
 
 ```cpp
+// 首先创建蛇，食物实体，进入{等待输入，更新游戏，输出}循环
 Snake snake;
 Food food(snake);
-        
+
 while(true)
 {
     // 等待输入
@@ -241,8 +244,8 @@ gameEnd:;  // 添加游戏结束标签
 ## 暂停NEXT
 
 - [x] 修复以上BUG
-- [ ] 将交互改成异步的多线程的，而非while一套
-- [ ] 美化显示，要求正方形
+- [x] 将交互改成异步的多线程的，而非while一套
+- [x] 美化显示，要求正方形
 - [ ] 对比AI生成SNAKE的代码
 - [ ] 开始重构代码
 - [ ] 录制项目视频
@@ -265,19 +268,19 @@ gameEnd:;  // 添加游戏结束标签
 ```cpp
 bool collision()
 {
-	Position head = body.back();
-	Position nextHead = head + direction;
-	// 边界碰撞
-	if (nextHead.x < 0 || nextHead.x >= MAP_SIZE || nextHead.y < 0 || nextHead.y >= MAP_SIZE)
-	{
-		return true; // 撞墙
-	}
-	// 自身碰撞
-	if (inBody(nextHead))
-	{
-		return true; // 撞到自己
-	}
-	return false;
+    Position head = body.back();
+    Position nextHead = head + direction;
+    // 边界碰撞
+    if (nextHead.x < 0 || nextHead.x >= MAP_SIZE || nextHead.y < 0 || nextHead.y >= MAP_SIZE)
+    {
+        return true; // 撞墙
+    }
+    // 自身碰撞
+    if (inBody(nextHead))
+    {
+        return true; // 撞到自己
+    }
+    return false;
 }
 ```
 
@@ -309,7 +312,7 @@ BUG：边界碰撞没有包含了边界
 ```cpp
 if(nextDirection != snake.getDirection()) // 确保方向改变
 {
-	snake.setDirection(nextDirection); // 设置新的方向
+    snake.setDirection(nextDirection); // 设置新的方向
 }
 ```
 
@@ -349,4 +352,104 @@ srand(time(nullptr));
 ```
 
 BUG：不设置种子，每次启动程序基于随机数的食物生成会按照相同模式生成
+
+## Step6 优化游戏交互
+
+- 将蛇初始长度由1->2，1长度相反方向应该可以移动，但是限制不可以如此，由此改为2
+
+```cpp
+Snake() : length(2), direction(Right)
+{
+    // 初始化蛇身，初始位置在地图中心
+    Position startPos = {(MAP_SIZE - 1) / 2, (MAP_SIZE - 1 ) / 2};
+    body.push_back(startPos);
+    // 初始化蛇身，初始位置在地图中心，尾巴在左，头在右
+    Position tail = {(MAP_SIZE - 1) / 2, (MAP_SIZE - 1 ) / 2};
+    Position head = {tail.x + 1, tail.y};
+    body.push_back(tail); // 尾巴
+    body.push_back(head); // 头
+}
+```
+
+- 将显示由原来的cls然后逐行输出改为buffer输出
+
+```cpp
+void display(const Snake& snake, const Food& food)
+{
+    // 使用缓冲区避免闪烁
+    string buffer;
+    buffer.reserve(MAP_SIZE * (MAP_SIZE + 1) * 2);
+    for (int y = 0; y < MAP_SIZE; ++y) {
+        for (int x = 0; x < MAP_SIZE; ++x) {
+            Position pos = {x, y};
+            char ch;
+            if (snake.inBody(pos)) {
+                ch = snakeSign;
+            } else if (pos == food.getPosition()) {
+                ch = foodSign;
+            } else if (x == 0 || x == MAP_SIZE - 1 || y == 0 || y == MAP_SIZE - 1) {
+                ch = wallSign;
+            } else {
+                ch = emptySign;
+            }
+            buffer += ch;
+            buffer += ch; // 每格输出两次，视觉上更接近正方形
+        }
+        buffer += '\n';
+    }
+    // 光标移动到左上角
+    cout << "\033[H" << buffer;
+}
+```
+
+- 将游戏交互改为非阻塞键盘输入
+
+```cpp
+while(true)
+{
+    if (_kbhit())
+    {
+        char input = _getch(); // 获取键盘输入
+        switch(input) {
+            case 'w': nextDirection = Up; break;
+            case 's': nextDirection = Down; break;
+            case 'a': nextDirection = Left; break;
+            case 'd': nextDirection = Right; break;
+            case 'q': goto gameEnd;  // 退出游戏
+        }
+    }
+
+    // 判断是否为反方向
+    auto isOpposite = [](const Position& a, const Position& b) {
+        return a.x == -b.x && a.y == -b.y;
+    };
+    if(nextDirection != snake.getDirection() && !isOpposite(nextDirection, snake.getDirection())) // 不是原方向也不是反方向
+    {
+        snake.setDirection(nextDirection); // 设置新的方向
+    }
+
+    // 更新游戏
+    if (snake.collision())
+    {
+        cout << "Game Over! You collided with the wall or yourself.\n";
+        break; // 结束游戏
+    }
+    else
+    {
+        snake.update(food); // 更新蛇的位置
+    }
+
+    // 输出游戏画面
+    display(snake, food);
+    cout << "Snake Length: " << snake.getLength() << endl;
+
+    Sleep(314); // 暂停314毫秒
+}
+gameEnd:;
+```
+
+## 暂停NEXT
+
+- [ ] 重构代码
+- [ ] README
 

@@ -3,6 +3,8 @@
 #include <string>
 #include <deque>
 #include <ctime>
+#include <conio.h>
+#include <windows.h>
 
 using namespace std;
 
@@ -80,11 +82,13 @@ private:
     Position direction;   // 当前移动方向
 
 public:
-    Snake() : length(INITIAL_SNAKE_LENGTH), direction(Right)
+    Snake() : length(2), direction(Right)
     {
-        // 初始化蛇身，初始位置在地图中心
-        Position startPos = {(MAP_SIZE - 1) / 2, (MAP_SIZE - 1 ) / 2};
-        body.push_back(startPos);
+        // 初始化蛇身，初始位置在地图中心，尾巴在左，头在右
+        Position tail = {(MAP_SIZE - 1) / 2, (MAP_SIZE - 1 ) / 2};
+        Position head = {tail.x + 1, tail.y};
+        body.push_back(tail); // 尾巴
+        body.push_back(head); // 头
     }
 
     int getLength() const {
@@ -153,25 +157,29 @@ void Food::generateFood(const Snake& snake) {
 
 void display(const Snake& snake, const Food& food)
 {
-    system("clear || cls"); // 清屏
-
-    // 逐行输出
+    // 使用缓冲区避免闪烁
+    string buffer;
+    buffer.reserve(MAP_SIZE * (MAP_SIZE + 1) * 2);
     for (int y = 0; y < MAP_SIZE; ++y) {
         for (int x = 0; x < MAP_SIZE; ++x) {
             Position pos = {x, y};
+            char ch;
             if (snake.inBody(pos)) {
-                cout << snakeSign; // 蛇身
+                ch = snakeSign;
             } else if (pos == food.getPosition()) {
-                cout << foodSign; // 食物
+                ch = foodSign;
             } else if (x == 0 || x == MAP_SIZE - 1 || y == 0 || y == MAP_SIZE - 1) {
-                cout << wallSign; // 墙壁
-            } else  
-            {
-                cout << emptySign; // 空白
+                ch = wallSign;
+            } else {
+                ch = emptySign;
             }
+            buffer += ch;
+            buffer += ch; // 每格输出两次，视觉上更接近正方形
         }
-        cout << endl;
+        buffer += '\n';
     }
+    // 光标移动到左上角
+    cout << "\033[H" << buffer;
 }
 
 int main()
@@ -180,7 +188,7 @@ int main()
     srand(time(nullptr));
     
     // clear the console screen
-    system("clear || cls");
+    // system("cls"); // 不再清屏
 
     // set all output to green
     cout << "\033[32m";
@@ -195,23 +203,33 @@ int main()
 
     if (choice == 0)
     {
+        // 隐藏光标
+        cout << "\033[?25l";
         Snake snake;
         Food food(snake);
-        Position nextDirection;
+        Position nextDirection = Right; // 初始方向为右
         
+        // 输出初始画面，移动光标到左上角
+        cout << "\033[2J\033[H";
         while(true)
         {
-            // 等待输入
-            char input;
-            cin >> input;
-            switch(input) {
-                case 'w': nextDirection = Up; break;
-                case 's': nextDirection = Down; break;
-                case 'a': nextDirection = Left; break;
-                case 'd': nextDirection = Right; break;
-                case 'q': goto gameEnd;  // 退出游戏
+            if (_kbhit())
+            {
+                char input = _getch(); // 获取键盘输入
+                switch(input) {
+                    case 'w': nextDirection = Up; break;
+                    case 's': nextDirection = Down; break;
+                    case 'a': nextDirection = Left; break;
+                    case 'd': nextDirection = Right; break;
+                    case 'q': goto gameEnd;  // 退出游戏
+                }
             }
-            if(nextDirection != snake.getDirection()) // 确保方向改变
+
+            // 判断是否为反方向
+            auto isOpposite = [](const Position& a, const Position& b) {
+                return a.x == -b.x && a.y == -b.y;
+            };
+            if(nextDirection != snake.getDirection() && !isOpposite(nextDirection, snake.getDirection())) // 不是原方向也不是反方向
             {
                 snake.setDirection(nextDirection); // 设置新的方向
             }
@@ -230,8 +248,12 @@ int main()
             // 输出游戏画面
             display(snake, food);
             cout << "Snake Length: " << snake.getLength() << endl;
+
+            Sleep(314); // 暂停314毫秒
         }
-        gameEnd:;  // 添加游戏结束标签
+        gameEnd:;
+        // 恢复光标
+        cout << "\033[?25h";
     }
     else if (choice == 1)
     {
