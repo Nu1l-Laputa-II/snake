@@ -262,39 +262,91 @@ gameEnd:;  // 添加游戏结束标签
 
 - 修复前
 
-```
-
+```cpp
+bool collision()
+{
+	Position head = body.back();
+	Position nextHead = head + direction;
+	// 边界碰撞
+	if (nextHead.x < 0 || nextHead.x >= MAP_SIZE || nextHead.y < 0 || nextHead.y >= MAP_SIZE)
+	{
+		return true; // 撞墙
+	}
+	// 自身碰撞
+	if (inBody(nextHead))
+	{
+		return true; // 撞到自己
+	}
+	return false;
+}
 ```
 
 - 修复后
 
+```cpp
+bool collision()
+{
+    Position head = body.back();
+    Position nextHead = head + direction;
+    // 边界碰撞
+    if (nextHead.x <= 0 || nextHead.x >= MAP_SIZE - 1 || nextHead.y <= 0 || nextHead.y >= MAP_SIZE - 1)
+    {
+        return true; // 撞墙
+    }
+    // 自身碰撞
+    if (inBody(nextHead))
+    {
+        return true; // 撞到自己
+    }
+    return false;
+}
 ```
 
-```
+BUG：边界碰撞没有包含了边界
 
 #### 禁止往反方向走
 
+```cpp
+if(nextDirection != snake.getDirection()) // 确保方向改变
+{
+	snake.setDirection(nextDirection); // 设置新的方向
+}
 ```
 
-```
+BUG：蛇不应该往反方向走
 
 ### generateFood
 
 - 修复前
 
-```
-
+```cpp
+void Food::generateFood(const Snake& snake) {
+    do {
+        position.x = rand() % MAP_SIZE;
+        position.y = rand() % MAP_SIZE;
+    } while (snake.inBody(position));
+}
 ```
 
 - 修复后
 
+```cpp
+void Food::generateFood(const Snake& snake) {
+    do {
+        position.x = rand() % (MAP_SIZE - 2) + 1;   // 确保食物不在边界上
+        position.y = rand() % (MAP_SIZE - 2) + 1;
+    } while (snake.inBody(position));
+}
 ```
 
-```
+BUG：食物生成在[0, MAP_SIZE - 1]，应该在[1, MAP_SIZE - 2]
 
 #### 给rand种子
 
+```cpp
+// 设置随机数种子
+srand(time(nullptr));
 ```
 
-```
+BUG：不设置种子，每次启动程序基于随机数的食物生成会按照相同模式生成
 
